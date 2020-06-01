@@ -47,4 +47,9 @@ class Permissions implements AuthorizationPlugin
     {
         return [];
     }
+
+    public function authorize($user, $ability, $arguments = []): bool
+    {
+        return true;
+    }
 }

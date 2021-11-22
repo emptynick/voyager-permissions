@@ -1,4 +1,4 @@
-# Spatie permission Voyager II
+# spatie/permission plugin for Voyager II
 
 This plugin for Voyager II implements spaties [laravel-permission](https://github.com/spatie/laravel-permission) to authorize actions and users.
 

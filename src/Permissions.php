@@ -10,17 +10,23 @@ use Inertia\Inertia;
 use Spatie\Permission\Models\{Permission, Role};
 use Voyager\Admin\Classes\MenuItem;
 use Voyager\Admin\Contracts\Plugins\AuthorizationPlugin;
-use Voyager\Admin\Contracts\Plugins\Features\Provider\{JS, MenuItems, ProtectedRoutes, InstructionsComponent};
+use Voyager\Admin\Contracts\Plugins\Features\Provider\{JS, MenuItems, ProtectedRoutes};
 use Voyager\Admin\Facades\Voyager;
 use Voyager\Admin\Manager\Menu;
 
-class Permissions implements AuthorizationPlugin, JS, MenuItems, ProtectedRoutes, InstructionsComponent
+class Permissions implements AuthorizationPlugin, JS, MenuItems, ProtectedRoutes
 {
     public $name = 'Voyager Permissions';
     public $description = 'Permission system for Voyager II using spatie/laravel-permission';
     public $repository = 'emptynick/voyager-permissions';
     public $website = 'https://github.com/emptynick/voyager-permissions';
     public $version = '1.0.0';
+
+
+    public function __construct()
+    {
+        $this->readme = realpath(dirname(__DIR__, 1).'/README.md');
+    }
 
     public function authorize($user, $ability, $arguments = []): ?bool
     {
@@ -35,11 +41,27 @@ class Permissions implements AuthorizationPlugin, JS, MenuItems, ProtectedRoutes
         }
         if (count($arguments) >= 1) {
             if ($arguments[0] instanceof \Illuminate\Database\Eloquent\Model) {
-                // debug('Authorize user against model: '.$arguments[0]->getKey());
+                return $user->hasAnyPermission([
+                    $ability." bread ".$arguments[0]->getTableName(),
+                    $ability." bread *",
+                    "* bread *",
+                    "* bread ".$arguments[0]->getTableName()
+                ]);
             } elseif ($arguments[0] instanceof \Voyager\Admin\Classes\Bread) {
-                // debug('Authorize user against BREAD: '.$arguments[0]->name_singular.':'.$ability);
+                if ($ability == 'browse') {
+                    return $user->hasPermissionTo('browse builder');
+                } elseif ($ability == 'add' && is_string($arguments[1])) {
+                    return $user->hasAnyPermission(['add builder *', 'add builder '.$arguments[1]]);
+                } else {
+                    return $user->hasAnyPermission([
+                        $ability." builder ".$arguments[0]->table,
+                        $ability." builder *",
+                        "* builder *",
+                        "* builder ".$arguments[0]->table
+                    ]);
+                }
             } elseif (is_string($arguments[0])) {
-                // debug('Authorize user against string: '.$arguments[0]);
+                return $user->hasPermissionTo($ability.' '.$arguments[0]);
             }
         }
 
@@ -159,11 +181,6 @@ class Permissions implements AuthorizationPlugin, JS, MenuItems, ProtectedRoutes
 
             return abort(500);
         })->name('voyager-permissions.remove');
-    }
-
-    public function getInstructionsComponent(): string
-    {
-        return 'voyager-permissions-instructions';
     }
 
     private function getPermissions(Request $request, mixed $selected_type, mixed $selected_id): LengthAwarePaginator

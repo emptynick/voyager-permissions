@@ -15,13 +15,28 @@ trait HasRoles {
         SpatieHasRoles::permissions as permissions;
         SpatieHasRoles::roles as roles;
         SpatieHasRoles::hasPermissionTo as spatieHasPermissionTo;
+        SpatieHasRoles::hasAnyPermission as spatieHasAnyPermission;
     }
 
     public function hasPermissionTo($permission, string $guard = null): bool
     {
         $this->logRequest('permission', $permission, $guard);
 
-        return true;
+        return $this->spatieHasPermissionTo($permission, $guard);
+    }
+
+    public function hasAnyPermission($permissions): bool
+    {
+        $permissions = collect($permissions)->flatten();
+
+        foreach ($permissions as $permission) {
+            $this->logRequest('permission', $permission, null);
+            if ($this->checkPermissionTo($permission)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function logRequest($type, $action, $guard): void

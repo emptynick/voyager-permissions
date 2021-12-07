@@ -23,6 +23,7 @@
         }
     },
     "require": {
-        "spatie/laravel-permission": "^5.3"
+        "spatie/laravel-permission": "^5.3",
+        "voyager-admin/voyager": "2.x-dev"
     }
 }
